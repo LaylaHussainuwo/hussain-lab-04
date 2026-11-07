@@ -14,3 +14,80 @@ execute:
   warning: false
   message: false
 ---
+
+```{r, set up}
+
+library(glmmTMB)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(broom.mixed)
+library(performance)
+library(gt)
+library(readr)
+library(DHARMa)
+library(ggeffects)
+library(titanic)
+
+titanic <- titanic_train
+
+titanic <- titanic |>
+  select(Survived, Sex, Age, Pclass) |>
+  drop_na() |>
+  mutate(
+    Sex.Binary = case_when(
+      Sex == "male" ~ 0,
+      Sex == "female" ~ 1)) |>
+  mutate(
+    Survived.Char = case_when(
+      Survived == 0 ~ "Died",
+      Survived == 1 ~ "Survived")) |>
+  mutate(
+    Pclass.Char = case_when(
+      Pclass == "1" ~ "First Class",
+      Pclass == "2" ~ "Second Class",
+      Pclass == "3" ~ "Third Class")) |>
+  mutate(Pclass = factor(Pclass, levels = c(1, 2, 3))) |>
+  select(Survived, Survived.Char, Sex, Sex.Binary, Pclass, Pclass.Char, Age)
+ 
+n <- nrow(titanic)
+
+```
+
+```{r, descriptives}
+
+descriptives <- titanic |>
+  summarise(
+    across(
+      c(Age),
+      list(mean = mean, sd = sd, min = min, max = max)
+    )
+  ) |>
+  pivot_longer(
+    everything(),
+    names_to = c("variable", ".value"),
+    names_sep = "_"
+  )
+
+descriptives |>
+  gt() |>
+  fmt_number(columns = where(is.numeric), decimals = 2)
+
+```
+
+```{r, counts}
+
+titanic |>
+  count(Pclass.Char, Sex, Survived.Char) |>
+  gt()
+
+# fix this. turn it into one table  
+# titanic |>
+#   count(Sex) |>
+#   gt()
+# 
+# titanic |>
+#   count(Survived.Char) |>
+#   gt()
+
+```
